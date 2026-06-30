@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シンマエラボ 報告ツール</title>
+<style>
+  :root {
+    --ink: #1a2332;
+    --ink-soft: #4a5568;
+    --line: #d8dee9;
+    --line-soft: #e8edf3;
+    --bg: #eef1f5;
+    --card: #ffffff;
+    --accent: #2d6a8e;
+    --accent-deep: #1f4d68;
+    --accent-soft: #e3eef4;
+    --gold: #b8860b;
+    --good: #2f7d4f;
+    --good-soft: #e4f2ea;
+    --warm: #fbfaf7;
+    --shadow: 0 1px 3px rgba(26,35,50,.08), 0 6px 20px rgba(26,35,50,.06);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+    padding: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; }
+
+  /* ---- Header ---- */
+  header {
+    text-align: center;
+    padding: 20px 0 24px;
+  }
+  header .logo {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  header h1 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--ink);
+  }
+  header .sub {
+    font-size: .72rem;
+    color: var(--ink-soft);
+    letter-spacing: .18em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  header .tagline {
+    margin-top: 6px;
+    font-size: .8rem;
+    color: var(--ink-soft);
+    letter-spacing: .02em;
+  }
+
+  /* ---- Tabs ---- */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: var(--card);
+    padding: 6px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .tab {
+    appearance: none;
+    border: none;
+    background: transparent;
+    padding: 13px 10px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .92rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all .18s ease;
+    letter-spacing: .02em;
+  }
+  .tab .tab-sub {
+    display: block;
+    font-size: .68rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    letter-spacing: .04em;
+  }
+  .tab[aria-selected="true"] {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(45,106,142,.3);
+  }
+  .tab[aria-selected="true"] .tab-sub { color: rgba(255,255,255,.8); }
+
+  /* ---- Panel ---- */
+  .panel { display: none; animation: fade .25s ease; }
+  .panel.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .card-head {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--accent-deep), var(--accent));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-head h2 { font-size: 1.02rem; font-weight: 700; letter-spacing: .03em; }
+  .card-head .badge {
+    font-size: .68rem;
+    background: rgba(255,255,255,.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: .05em;
+  }
+  .card-body { padding: 20px; }
+
+  /* ---- Field ---- */
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    letter-spacing: .02em;
+  }
+  .field .hint { font-weight: 500; color: var(--accent); font-size: .74rem; }
+
+  input[type="text"], input[type="number"], input[type="date"], textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: .95rem;
+    color: var(--ink);
+    background: var(--warm);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    background: #fff;
+  }
+  input::placeholder, textarea::placeholder { color: #a8b3c1; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .inline-money { position: relative; }
+  .inline-money input { padding-right: 34px; }
+  .inline-money::after {
+    content: "円";
+    position: absolute;
+    right: 13px; top: 50%;
+    transform: translateY(-50%);
+    font-size: .85rem;
+    color: var(--ink-soft);
+    pointer-events: none;
+  }
+
+  /* ---- Worker block (monthly) ---- */
+  .section-label {
+    font-size: .82rem;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: .03em;
+    margin: 22px 0 12px;
+    padding-bottom: 7px;
+    border-bottom: 2px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::before {
+    content: "";
+    width: 4px; height: 15px;
+    background: var(--gold);
+    border-radius: 2px;
+  }
+
+  .worker {
+    background: var(--warm);
+    border: 1.5px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .worker .worker-num {
+    position: absolute;
+    top: -9px; left: 13px;
+    background: var(--accent);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 10px;
+    letter-spacing: .05em;
+  }
+  .worker .del-worker {
+    position: absolute;
+    top: 10px; right: 10px;
+    appearance: none;
+    border: none;
+    background: #f0e0e0;
+    color: #b04a4a;
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .worker .del-worker:hover { background: #e6c8c8; }
+  .worker .wname { margin-bottom: 10px; margin-top: 4px; }
+  .worker .wname input { font-weight: 600; }
+
+  .work-detail { display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 8px; }
+  .work-detail .field { margin: 0; }
+  .work-detail label { font-size: .72rem; margin-bottom: 4px; }
+
+  .add-btn {
+    width: 100%;
+    appearance: none;
+    border: 1.5px dashed var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    padding: 11px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .02em;
+  }
+  .add-btn:hover { background: #d4e6f0; }
+
+  /* ---- Total bar ---- */
+  .total-bar {
+    background: var(--accent-soft);
+    border-radius: 11px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .total-bar .t-label { font-size: .85rem; font-weight: 700; color: var(--accent-deep); }
+  .total-bar .t-val { font-size: 1.3rem; font-weight: 800; color: var(--accent-deep); letter-spacing: .02em; }
+  .total-bar .t-val .yen { font-size: .9rem; margin-left: 2px; }
+
+  /* ---- Preview ---- */
+  .preview-card { background: var(--ink); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .preview-head {
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  .preview-head .ph-title {
+    color: #fff; font-size: .82rem; font-weight: 700;
+    letter-spacing: .05em; display: flex; align-items: center; gap: 7px;
+  }
+  .preview-head .ph-title::before {
+    content: "📋"; font-size: .9rem;
+  }
+  .preview {
+    font-family: "SF Mono", "Consolas", "Menlo", monospace;
+    font-size: .82rem;
+    line-height: 1.75;
+    color: #d4dae3;
+    padding: 18px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+
+  .copy-btn {
+    width: 100%;
+    appearance: none;
+    border: none;
+    background: var(--good);
+    color: #fff;
+    padding: 15px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .copy-btn:hover { background: #276a42; }
+  .copy-btn:active { transform: scale(.99); }
+  .copy-btn.done { background: var(--gold); }
+
+  .util-row { display: flex; gap: 8px; margin-top: 10px; }
+  .util-row button {
+    flex: 1;
+    appearance: none;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    color: var(--ink-soft);
+    padding: 10px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .util-row button:hover { border-color: var(--accent); color: var(--accent); }
+
+  footer {
+    text-align: center;
+    padding: 22px 0 10px;
+    font-size: .72rem;
+    color: var(--ink-soft);
+    letter-spacing: .03em;
+  }
+
+  @media (max-width: 480px) {
+    .work-detail { grid-template-columns: 1fr; gap: 6px; }
+    .row3 { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <h1>シンマエラボ</h1>
+      <span class="sub">Report</span>
+    </div>
+    <p class="tagline">就労継続支援B型　業務報告ツール</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-panel="monthly">
+      月次報告
+      <span class="tab-sub">毎月末日</span>
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="daily">
+      日次報告
+      <span class="tab-sub">毎日</span>
+    </button>
+  </div>
+
+  <!-- ============ MONTHLY ============ -->
+  <section class="panel active" id="monthly">
+    <div class="card">
+      <div class="card-head">
+        <h2>月次　売上・工賃報告</h2>
+        <span class="badge" id="m-month-badge">6月</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>報告月</label>
+          <div class="inline-money" style="--unit:''">
+            <input type="text" id="m-month" placeholder="例：6" inputmode="numeric">
+          </div>
+        </div>
+
+        <div class="section-label">売上</div>
+        <div class="field">
+          <label>国保連請求額 <span class="hint">（予定）</span></label>
+          <div class="inline-money"><input type="number" id="m-kokuho" placeholder="0" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <label>内職売上</label>
+          <div class="inline-money"><input type="number" id="m-naishoku" placeholder="0" inputmode="numeric"></div>
+        </div>
+        <div class="total-bar">
+          <span class="t-label">売上合計</span>
+          <span class="t-val" id="m-sales-total">0<span class="yen">円</span></span>
+        </div>
+
+        <div class="section-label">利用者工賃支払い</div>
+        <div id="m-workers"></div>
+        <button class="add-btn" id="m-add-worker">＋ 利用者を追加</button>
+
+        <div class="total-bar" style="background: var(--good-soft); margin-top:16px;">
+          <span class="t-label" style="color: var(--good);">工賃支払い合計</span>
+          <span class="t-val" id="m-wage-total" style="color: var(--good);">0<span class="yen">円</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-card">
+      <div class="preview-head">
+        <span class="ph-title">送信プレビュー</span>
+      </div>
+      <div class="preview" id="m-preview"></div>
+    </div>
+    <div style="height:12px"></div>
+    <button class="copy-btn" id="m-copy">本文をコピー</button>
+    <div class="util-row">
+      <button id="m-reset">入力をクリア</button>
+    </div>
+  </section>
+
+  <!-- ============ DAILY ============ -->
+  <section class="panel" id="daily">
+    <div class="card">
+      <div class="card-head">
+        <h2>日次　利用状況報告</h2>
+        <span class="badge">1日の終わりに</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>報告日</label>
+          <input type="date" id="d-date">
+        </div>
+
+        <div class="section-label">利用者名</div>
+        <div id="d-names"></div>
+        <button class="add-btn" id="d-add-name">＋ 利用者を追加</button>
+
+        <div class="section-label">人数集計</div>
+        <div class="row3">
+          <div class="field">
+            <label>利用</label>
+            <div class="inline-money" style="--u:'名'"><input type="number" id="d-present" placeholder="0" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>欠席</label>
+            <div class="inline-money"><input type="number" id="d-absent" placeholder="0" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>合計</label>
+            <input type="number" id="d-total" placeholder="0" inputmode="numeric" readonly style="background:var(--accent-soft); font-weight:700; color:var(--accent-deep);">
+          </div>
+        </div>
+        <p style="font-size:.74rem; color:var(--ink-soft); margin-top:-4px;">合計は利用＋欠席で自動計算されます。手動で書き換えることもできます。</p>
+      </div>
+    </div>
+
+    <div class="preview-card">
+      <div class="preview-head">
+        <span class="ph-title">送信プレビュー</span>
+      </div>
+      <div class="preview" id="d-preview"></div>
+    </div>
+    <div style="height:12px"></div>
+    <button class="copy-btn" id="d-copy">本文をコピー</button>
+    <div class="util-row">
+      <button id="d-reset">入力をクリア</button>
+    </div>
+  </section>
+
+  <footer>シンマエラボ 業務報告ツール</footer>
+</div>
+
+<script>
+// ============ Tabs ============
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.setAttribute('aria-selected', 'false'));
+    tab.setAttribute('aria-selected', 'true');
+    panels.forEach(p => p.classList.remove('active'));
+    document.getElementById(tab.dataset.panel).classList.add('active');
+  });
+});
+
+// ============ Helpers ============
+const yen = n => (Number(n) || 0).toLocaleString('ja-JP');
+const blank = '⚪⚪';
+function fmtMoney(v) { return (v === '' || v == null) ? blank : yen(v); }
+function fmtRaw(v, suffix) { return (v === '' || v == null) ? blank : v + (suffix||''); }
+
+// ============ MONTHLY ============
+const mWorkers = document.getElementById('m-workers');
+let mWorkerCount = 0;
+
+function makeWorkerBlock() {
+  mWorkerCount++;
+  const n = mWorkerCount;
+  const div = document.createElement('div');
+  div.className = 'worker';
+  div.innerHTML = `
+    <span class="worker-num">利用者 ${n}</span>
+    <button class="del-worker" title="削除">×</button>
+    <div class="wname field">
+      <input type="text" class="w-name" placeholder="氏名（例：山田 太郎）">
+    </div>
+    <div class="work-detail">
+      <div class="field">
+        <label>稼働日数</label>
+        <div class="inline-money"><input type="number" class="w-days" placeholder="0" inputmode="numeric"></div>
+      </div>
+      <div class="field">
+        <label>営業日数</label>
+        <div class="inline-money"><input type="number" class="w-total-days" placeholder="0" inputmode="numeric"></div>
+      </div>
+      <div class="field">
+        <label>工賃</label>
+        <div class="inline-money"><input type="number" class="w-wage" placeholder="0" inputmode="numeric"></div>
+      </div>
+    </div>
+  `;
+  div.querySelector('.del-worker').addEventListener('click', () => {
+    div.remove();
+    renumberWorkers();
+    updateMonthly();
+  });
+  div.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateMonthly));
+  mWorkers.appendChild(div);
+  updateMonthly();
+}
+
+function renumberWorkers() {
+  mWorkers.querySelectorAll('.worker').forEach((w, i) => {
+    w.querySelector('.worker-num').textContent = '利用者 ' + (i + 1);
+  });
+}
+
+function updateMonthly() {
+  const month = document.getElementById('m-month').value;
+  document.getElementById('m-month-badge').textContent = month ? month + '月' : '—';
+
+  const kokuho = document.getElementById('m-kokuho').value;
+  const naishoku = document.getElementById('m-naishoku').value;
+  const salesTotal = (Number(kokuho)||0) + (Number(naishoku)||0);
+  document.getElementById('m-sales-total').innerHTML = yen(salesTotal) + '<span class="yen">円</span>';
+
+  let wageTotal = 0;
+  let workerLines = '';
+  mWorkers.querySelectorAll('.worker').forEach(w => {
+    const name = w.querySelector('.w-name').value;
+    const days = w.querySelector('.w-days').value;
+    const totalDays = w.querySelector('.w-total-days').value;
+    const wage = w.querySelector('.w-wage').value;
+    wageTotal += Number(wage) || 0;
+
+    const nameStr = name || blank + ' ' + blank;
+    const dayStr = fmtRaw(days, '日');
+    const ratioStr = '（' + fmtRaw(days) + '日/' + fmtRaw(totalDays) + '日）';
+    const wageStr = fmtMoney(wage) + '円';
+    workerLines += `${nameStr}\n${dayStr}${ratioStr}稼働　${wageStr}\n`;
+  });
+
+  document.getElementById('m-wage-total').innerHTML = yen(wageTotal) + '<span class="yen">円</span>';
+
+  // Build report text
+  const monthStr = month || blank;
+  const kokuhoStr = fmtMoney(kokuho);
+  const naishokuStr = fmtMoney(naishoku);
+  const salesTotalStr = salesTotal > 0 ? yen(salesTotal) : blank;
+  const wageTotalStr = wageTotal > 0 ? yen(wageTotal) : blank;
+
+  if (!workerLines) {
+    workerLines = `${blank} ${blank}\n${blank}日（${blank}日/${blank}日）稼働　${blank}円\n`;
+  }
+
+  const text =
+`お疲れ様です。
+シンマエラボ${monthStr}月詳細です。
+
+・国保連請求額　${kokuhoStr}円(予定)
+・内職売上　${naishokuStr}円
+合計${salesTotalStr}円
+
+・利用者工賃支払い
+${workerLines}合計${wageTotalStr}円
+
+※国保連の請求額は確定次第、再度報告するものとする`;
+
+  document.getElementById('m-preview').textContent = text;
+}
+
+document.getElementById('m-add-worker').addEventListener('click', makeWorkerBlock);
+['m-month','m-kokuho','m-naishoku'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateMonthly);
+});
+
+document.getElementById('m-copy').addEventListener('click', function() {
+  copyText(document.getElementById('m-preview').textContent, this);
+});
+
+document.getElementById('m-reset').addEventListener('click', () => {
+  if (!confirm('月次報告の入力をすべてクリアしますか？')) return;
+  ['m-month','m-kokuho','m-naishoku'].forEach(id => document.getElementById(id).value = '');
+  mWorkers.innerHTML = '';
+  mWorkerCount = 0;
+  makeWorkerBlock();
+});
+
+// ============ DAILY ============
+const dNames = document.getElementById('d-names');
+let dNameCount = 0;
+
+function makeNameBlock() {
+  dNameCount++;
+  const div = document.createElement('div');
+  div.className = 'worker';
+  div.style.paddingTop = '14px';
+  div.innerHTML = `
+    <button class="del-worker" title="削除">×</button>
+    <div class="field" style="margin:0;">
+      <input type="text" class="d-name" placeholder="氏名（例：山田 太郎）">
+    </div>
+  `;
+  div.querySelector('.del-worker').addEventListener('click', () => {
+    div.remove();
+    updateDaily();
+  });
+  div.querySelector('input').addEventListener('input', updateDaily);
+  dNames.appendChild(div);
+  updateDaily();
+}
+
+function formatJpDate(value) {
+  if (!value) return null;
+  const d = new Date(value + 'T00:00:00');
+  const w = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getMonth()+1}/${d.getDate()}(${w})`;
+}
+
+function updateDaily() {
+  const present = document.getElementById('d-present').value;
+  const absent = document.getElementById('d-absent').value;
+  const totalField = document.getElementById('d-total');
+
+  // auto total
+  if (present !== '' || absent !== '') {
+    totalField.value = (Number(present)||0) + (Number(absent)||0);
+  }
+  const total = totalField.value;
+
+  const dateStr = formatJpDate(document.getElementById('d-date').value) || `${blank}/${blank}(${blank})`;
+
+  let nameLines = '';
+  dNames.querySelectorAll('.d-name').forEach(inp => {
+    nameLines += (inp.value || blank + ' ' + blank) + '\n';
+  });
+  if (!nameLines) nameLines = blank + ' ' + blank + '\n';
+
+  const text =
+`${dateStr}
+利用者名
+${nameLines}利用${fmtRaw(present)}名
+欠席${fmtRaw(absent)}名
+合計${fmtRaw(total)}名`;
+
+  document.getElementById('d-preview').textContent = text;
+}
+
+document.getElementById('d-add-name').addEventListener('click', makeNameBlock);
+['d-date','d-present','d-absent','d-total'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateDaily);
+});
+
+document.getElementById('d-copy').addEventListener('click', function() {
+  copyText(document.getElementById('d-preview').textContent, this);
+});
+
+document.getElementById('d-reset').addEventListener('click', () => {
+  if (!confirm('日次報告の入力をすべてクリアしますか？')) return;
+  ['d-date','d-present','d-absent','d-total'].forEach(id => document.getElementById(id).value = '');
+  dNames.innerHTML = '';
+  dNameCount = 0;
+  makeNameBlock();
+});
+
+// ============ Copy ============
+function copyText(text, btn) {
+  const original = btn.textContent;
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+  };
+  const done = () => {
+    btn.textContent = '✓ コピーしました';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('done'); }, 1800);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => { fallback(); done(); });
+  } else {
+    fallback();
+    done();
+  }
+}
+
+// ============ Init ============
+// Set today's date for daily
+const today = new Date();
+document.getElementById('d-date').value =
+  today.getFullYear() + '-' +
+  String(today.getMonth()+1).padStart(2,'0') + '-' +
+  String(today.getDate()).padStart(2,'0');
+
+makeWorkerBlock();
+makeNameBlock();
+updateMonthly();
+updateDaily();
+</script>
+</body>
+</html>
